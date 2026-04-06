@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>tabIndex &amp; aria-label 심층 가이드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sidebar-w: 220px;
+  --bg: #fff;
+  --bg-aside: #f9fafb;
+  --bg-code: #f8f8f8;
+  --border: #e5e7eb;
+  --text: #1f2937;
+  --text-sub: #6b7280;
+  --text-muted: #9ca3af;
+  --blue: #2563eb;
+  --font-sans: 'Noto Sans KR', -apple-system, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+body { font-family: var(--font-sans); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.8; }
+
+.sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0;
+  width: var(--sidebar-w); background: var(--bg-aside);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  overflow-y: auto; z-index: 10;
+}
+.sidebar-head { padding: 20px 16px 16px; border-bottom: 1px solid var(--border); }
+.sidebar-head h1 { font-size: 13px; font-weight: 700; }
+.sidebar-head p { font-size: 11px; color: var(--text-muted); margin-top: 2px; font-family: var(--font-mono); }
+.sidebar-nav { padding: 12px 0; flex: 1; }
+.sidebar-label {
+  display: block; padding: 12px 16px 4px; font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);
+}
+.sidebar-nav a {
+  display: block; padding: 5px 16px; color: var(--text-sub);
+  text-decoration: none; font-size: 13px;
+  border-left: 2px solid transparent;
+  transition: all 0.15s;
+}
+.sidebar-nav a:hover { color: var(--text); background: #f0f1f3; }
+.sidebar-nav a.active { color: var(--blue); border-left-color: var(--blue); font-weight: 500; }
+
+.main { margin-left: var(--sidebar-w); max-width: 740px; margin-right: auto; padding: 40px 36px 80px; margin-left: calc(var(--sidebar-w) + max(0px, (100vw - var(--sidebar-w) - 740px) / 2)); }
+
+h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+h2 + p { color: var(--text-sub); margin-bottom: 32px; }
+
+section { margin-bottom: 48px; }
+h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+h3 + p { color: var(--text-sub); margin-bottom: 16px; font-size: 13px; }
+h4 { font-size: 14px; font-weight: 600; margin: 20px 0 8px; }
+p { margin-bottom: 8px; }
+
+.codeblock { margin: 8px 0 16px; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.codeblock-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 14px; background: #f1f3f5; border-bottom: 1px solid var(--border);
+  font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);
+}
+.codeblock pre {
+  background: var(--bg-code); margin: 0; padding: 14px 16px; overflow-x: auto;
+  font-family: var(--font-mono); font-size: 12.5px; line-height: 1.65; color: var(--text);
+}
+code { font-family: var(--font-mono); }
+p code, li code, td code {
+  font-size: 12px; background: #f1f3f5; padding: 2px 6px;
+  border-radius: 3px; color: #7c3aed;
+}
+
+.kw { color: #d73a49; }
+.fn { color: #6f42c1; }
+.str { color: #032f62; }
+.type { color: #005cc5; }
+.cm { color: #6a737d; font-style: italic; }
+.num { color: #005cc5; }
+.tag { color: #22863a; }
+.attr { color: #e36209; }
+.op { color: #d73a49; }
+
+table { width: 100%; border-collapse: collapse; margin: 8px 0 16px; font-size: 13px; }
+th { background: var(--bg-aside); font-weight: 600; padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+
+.flow-summary {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  padding: 14px 16px; background: var(--bg-aside); border: 1px solid var(--border);
+  border-radius: 6px; margin: 12px 0 20px; font-size: 13px; font-family: var(--font-mono);
+}
+.flow-summary span { color: var(--text-muted); }
+
+.callout {
+  padding: 16px 20px; border-radius: 6px; margin: 16px 0;
+  background: #eff6ff; border: 1px solid #bfdbfe;
+}
+.callout strong { color: var(--blue); }
+
+.callout-warn {
+  padding: 16px 20px; border-radius: 6px; margin: 16px 0;
+  background: #fffbeb; border: 1px solid #fde68a;
+}
+.callout-warn strong { color: #d97706; }
+
+.callout-error {
+  padding: 16px 20px; border-radius: 6px; margin: 16px 0;
+  background: var(--bg-aside); border: 1px solid var(--border);
+}
+.callout-error strong { color: var(--text); }
+
+.callout-success {
+  padding: 16px 20px; border-radius: 6px; margin: 16px 0;
+  background: var(--bg-aside); border: 1px solid var(--border);
+}
+.callout-success strong { color: var(--text); }
+
+.compare-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0 20px;
+}
+.compare-box {
+  padding: 14px 16px; border-radius: 6px; border: 1px solid var(--border); font-size: 13px;
+  background: var(--bg-code);
+}
+.compare-box.bad { background: var(--bg-code); border-color: var(--border); }
+.compare-box.good { background: var(--bg-code); border-color: var(--border); }
+.compare-box .compare-label {
+  display: block; font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.05em; margin-bottom: 8px;
+}
+.compare-box.bad .compare-label { color: var(--text-sub); }
+.compare-box.good .compare-label { color: var(--text-sub); }
+
+.divider { border: none; border-top: 2px solid var(--border); margin: 56px 0 48px; }
+
+.footer { padding: 20px 0; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-muted); }
+
+ol, ul { margin: 8px 0 16px; padding-left: 20px; }
+li { margin-bottom: 4px; }
+
+@media print { .sidebar { display: none; } .main { margin-left: 0; } }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-head">
+    <h1>tabIndex &amp; aria-label</h1>
+    <p>심층 가이드 &amp; 트러블슈팅</p>
+  </div>
+  <nav class="sidebar-nav" id="sidebar-nav">
+    <span class="sidebar-label">개요</span>
+    <a href="#overview">왜 필요한가</a>
+    <a href="#architecture">내부 동작 구조</a>
+    <span class="sidebar-label">tabIndex</span>
+    <a href="#tabindex-role">tabIndex의 역할</a>
+    <a href="#tabindex-trouble">tabIndex 트러블슈팅</a>
+    <span class="sidebar-label">aria-label</span>
+    <a href="#arialabel-role">aria-label의 역할</a>
+    <a href="#arialabel-trouble">aria-label 트러블슈팅</a>
+    <span class="sidebar-label">비교</span>
+    <a href="#compare-approaches">접근 방식 비교</a>
+  </nav>
+</aside>
+
+<main class="main">
+
+  <h2>tabIndex &amp; aria-label 심층 가이드</h2>
+  <p>베리어프리 키오스크에서 <code>tabIndex</code>와 <code>aria-label</code>을 사용하는 이유와 트러블슈팅 사례를 정리한 문서입니다.</p>
+
+  <div class="callout">
+    <strong>Windows 내레이터와 로컬 TTS 모두 동일한 방식을 사용합니다.</strong><br>
+    TTS 엔진 종류에 관계없이, 렌더러에서는 <code>tabIndex</code>로 포커스 가능한 요소를 만들고 <code>aria-label</code>에 읽어줄 텍스트를 작성하는 동일한 방식으로 구현합니다. 엔진별 처리 차이는 내부에서 자동으로 처리되므로 개발자가 신경 쓸 부분은 없습니다.
+  </div>
+
+  <!-- 왜 필요한가 -->
+  <section id="overview">
+    <h3>왜 필요한가</h3>
+    <p>시각 장애 사용자를 위한 TTS 음성 안내를 구현하기 위해, 두 가지 HTML 속성이 핵심적인 역할을 합니다.</p>
+
+    <div class="callout">
+      <strong>핵심 원리:</strong> <code>tabIndex</code>는 요소를 포커스 가능하게 만들고, <code>aria-label</code>은 포커스된 요소가 읽어줄 텍스트를 정의합니다. 이 두 속성이 함께 작동해야 TTS 음성 안내가 동작합니다.
+    </div>
+
+    <table>
+      <thead><tr><th>속성</th><th>역할</th><th>없을 때 결과</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>tabIndex</code></td>
+          <td>요소에 포커스를 받을 수 있게 함</td>
+          <td>키보드 네비게이션으로 도달 불가, TTS 미작동</td>
+        </tr>
+        <tr>
+          <td><code>aria-label</code></td>
+          <td>TTS가 읽을 텍스트를 정의</td>
+          <td>포커스는 되지만 읽어줄 텍스트 없음, 무음 또는 태그명만 읽힘</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>일반 웹 접근성에서는 스크린 리더가 요소의 텍스트 콘텐츠를 자동으로 읽습니다. 하지만 키오스크 환경에서는 <strong>방향키 기반 공간 네비게이션</strong>을 사용하기 때문에, 포커스 관리를 직접 제어해야 합니다.</p>
+  </section>
+
+  <!-- 내부 동작 구조 -->
+  <section id="architecture">
+    <h3>내부 동작 구조</h3>
+    <p>포커스부터 음성 출력까지의 전체 흐름입니다. 아래 용어는 프로젝트 내부 컴포넌트입니다.</p>
+
+    <table>
+      <thead><tr><th>컴포넌트</th><th>설명</th></tr></thead>
+      <tbody>
+        <tr><td><code>Focusable</code></td><td>자식 요소에 <code>tabIndex</code>와 <code>aria-label</code>을 동적으로 주입하는 래퍼 컴포넌트</td></tr>
+        <tr><td><code>FocusableProvider</code></td><td>앱 전체를 감싸며 키보드 이벤트 처리, aria-live 영역 관리, TTS 연동을 담당하는 Provider</td></tr>
+        <tr><td><code>ScreenReader</code></td><td>화면 밖(<code>left: -9999px</code>)에 배치되어 시각적으로 숨겨지지만 스크린 리더는 접근 가능한 styled-component</td></tr>
+        <tr><td><code>FOCUS_ITEMS</code></td><td>각 포커스 항목의 고유 키(<code>key</code>)와 음성 라벨(<code>label</code>)을 정의하는 상수 객체</td></tr>
+      </tbody>
+    </table>
+
+    <div class="flow-summary">
+      키보드 입력 (방향키) <span>&rarr;</span>
+      공간 네비게이션 (setFocus) <span>&rarr;</span>
+      Focusable 컴포넌트가 aria-label 주입 <span>&rarr;</span>
+      readCurrentFocus()로 텍스트 추출 <span>&rarr;</span>
+      aria-live 영역에 전달 <span>&rarr;</span>
+      TTS 음성 출력
+    </div>
+
+    <h4>1단계: Focusable 컴포넌트의 aria-label 주입</h4>
+    <p><code>Focusable</code> 컴포넌트는 <code>cloneElement</code>를 통해 자식 요소에 <code>tabIndex</code>와 <code>aria-label</code>을 동적으로 주입합니다.</p>
+
+    <div class="codeblock"><div class="codeblock-head"><span>Focusable.tsx - 핵심 로직</span><span>TypeScript</span></div>
+<pre><span class="kw">return</span> <span class="fn">cloneElement</span>(children, {
+  ref,
+  focused,
+  <span class="attr">tabIndex</span>: <span class="num">-1</span>,
+  <span class="str">'aria-label'</span>: focusItem?.<span class="attr">label</span>,
+  <span class="attr">style</span>: {
+    ...children.props.style,
+    <span class="attr">outline</span>: focused &amp;&amp; focusVisible ? <span class="str">'4px solid #ffff00'</span> : <span class="str">'none'</span>,
+    <span class="attr">outlineOffset</span>: <span class="str">'-3px'</span>,
+  },
+});</pre></div>
+
+    <h4>2단계: 포커스 시 aria-label 텍스트 추출</h4>
+    <p><code>FocusableProvider</code>에서 현재 포커스된 요소의 <code>aria-label</code>을 읽어 <code>aria-live</code> 영역에 전달합니다. 이 함수는 다시 읽기 키 입력, 음성 속도 변경, 볼륨 다이얼 조작 종료 등의 이벤트에서 호출됩니다.</p>
+
+    <div class="codeblock"><div class="codeblock-head"><span>FocusableProvider.tsx - 텍스트 추출</span><span>TypeScript</span></div>
+<pre><span class="kw">const</span> <span class="fn">readCurrentFocus</span> = () <span class="kw">=&gt;</span> {
+  <span class="kw">const</span> focusedElement = document.<span class="fn">activeElement</span> <span class="kw">as</span> <span class="type">HTMLElement</span>;
+  <span class="kw">if</span> (focusedElement) {
+    <span class="kw">const</span> ariaLabel = focusedElement.<span class="fn">getAttribute</span>(<span class="str">'aria-label'</span>);
+    <span class="kw">if</span> (ariaLabel) {
+      <span class="fn">announceText</span>(ariaLabel);
+    }
+  }
+};</pre></div>
+
+    <h4>3단계: aria-live 영역을 통한 음성 출력</h4>
+    <p>숨겨진 <code>ScreenReader</code> 요소에 <code>aria-live="polite"</code>가 설정되어 있어, 텍스트가 변경되면 TTS 엔진이 자동으로 읽어줍니다.</p>
+
+    <div class="codeblock"><div class="codeblock-head"><span>FocusableProvider.tsx - aria-live 영역</span><span>TypeScript</span></div>
+<pre>&lt;<span class="tag">ScreenReader</span>
+  <span class="attr">ref</span><span class="op">=</span>{guideRef}
+  <span class="attr">role</span><span class="op">=</span><span class="str">"status"</span>
+  <span class="attr">aria-live</span><span class="op">=</span><span class="str">"polite"</span>
+  <span class="attr">aria-atomic</span><span class="op">=</span><span class="str">"true"</span>
+/&gt;
+
+<span class="kw">const</span> <span class="fn">announceText</span> = (text: <span class="type">string</span>) <span class="kw">=&gt;</span> {
+  <span class="kw">if</span> (!guideRef.current) <span class="kw">return</span>;
+  guideRef.current.<span class="attr">textContent</span> = <span class="str">''</span>;
+  <span class="fn">requestAnimationFrame</span>(() <span class="kw">=&gt;</span> {
+    <span class="kw">if</span> (guideRef.current) {
+      guideRef.current.<span class="attr">textContent</span> = text;
+    }
+  });
+};</pre></div>
+
+    <div class="callout-warn">
+      <strong>주의:</strong> <code>announceText</code>는 <code>textContent</code>를 빈 문자열로 초기화한 뒤 <code>requestAnimationFrame</code>으로 다시 설정합니다. 동일한 텍스트를 연속으로 읽어야 할 때 aria-live가 변경을 감지하도록 하기 위한 패턴입니다.
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- tabIndex의 역할 -->
+  <section id="tabindex-role">
+    <h3>tabIndex의 역할</h3>
+    <p>키오스크에서 <code>tabIndex</code>가 필요한 이유와, 일반 웹과의 차이점입니다.</p>
+
+    <h4>일반 웹 vs 키오스크 환경</h4>
+    <table>
+      <thead><tr><th>환경</th><th>네비게이션 방식</th><th>tabIndex 필요 여부</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>일반 웹</td>
+          <td>Tab 키로 순차 이동</td>
+          <td><code>&lt;button&gt;</code>, <code>&lt;a&gt;</code> 등은 기본 포커스 가능</td>
+        </tr>
+        <tr>
+          <td>키오스크</td>
+          <td>방향키(상하)로 공간 이동</td>
+          <td>모든 요소에 명시적 <code>tabIndex</code> 필요</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>키오스크에서는 브라우저 기본 Tab 네비게이션을 사용하지 않고, 방향키 기반 공간 네비게이션을 사용합니다. <code>setFocus()</code>를 통해 프로그래밍적으로 포커스를 이동합니다.</p>
+
+    <h4>tabIndex="-1"을 사용하는 이유</h4>
+
+    <div class="callout">
+      <strong>tabIndex="-1"은 "Tab 키로는 접근 불가, JavaScript로만 포커스 가능"을 의미합니다.</strong><br>
+      키오스크에서는 Tab 키를 사용하지 않고 방향키로 이동하기 때문에, <code>tabIndex={-1}</code>로 설정하여 Tab 순서에서 제외하되 <code>element.focus()</code>로 프로그래밍적 포커스를 가능하게 합니다.
+    </div>
+
+    <div class="compare-grid">
+      <div class="compare-box bad">
+        <span class="compare-label">tabIndex={0} 사용 시</span>
+        Tab 키 순서에 포함됨<br>
+        방향키 네비게이션과 Tab 네비게이션이 충돌<br>
+        포커스 순서가 예측 불가능해짐<br>
+        사용자가 의도하지 않은 요소로 이동 가능
+      </div>
+      <div class="compare-box good">
+        <span class="compare-label">tabIndex={-1} 사용 시</span>
+        Tab 키 순서에서 제외<br>
+        방향키 네비게이션만으로 포커스 제어<br>
+        <code>setFocus()</code>로 정확한 이동 보장<br>
+        공간 네비게이션 라이브러리와 완벽 호환
+      </div>
+    </div>
+
+    <h4>Focusable 컴포넌트가 자동 주입</h4>
+    <p>개발자가 직접 <code>tabIndex</code>를 작성할 필요 없이, <code>Focusable</code> 컴포넌트가 <code>cloneElement</code>로 자동 주입합니다.</p>
+
+    <div class="codeblock"><div class="codeblock-head"><span>사용법</span><span>TypeScript</span></div>
+<pre><span class="cm">// Focusable로 감싸면 tabIndex={-1}이 자동 주입됨</span>
+&lt;<span class="tag">Focusable</span> <span class="attr">focusItem</span><span class="op">=</span>{FOCUS_ITEMS.MENU.FLOOR(<span class="kw">false</span>)}&gt;
+  &lt;<span class="tag">MenuButton</span>&gt;층별안내&lt;/<span class="tag">MenuButton</span>&gt;
+&lt;/<span class="tag">Focusable</span>&gt;
+
+<span class="cm">// 위 코드는 내부적으로 아래와 동일하게 렌더링됨</span>
+&lt;<span class="tag">MenuButton</span>
+  <span class="attr">tabIndex</span><span class="op">=</span>{<span class="num">-1</span>}
+  <span class="attr">aria-label</span><span class="op">=</span><span class="str">"층별안내: 확인 버튼을 누르시면 층별 안내 메뉴로 이동합니다."</span>
+&gt;
+  층별안내
+&lt;/<span class="tag">MenuButton</span>&gt;</pre></div>
+
+    <h4>ScreenReader 요소에서의 직접 사용</h4>
+    <p>상세 페이지의 긴 설명은 <code>ScreenReader</code> 컴포넌트에 직접 <code>tabIndex={-1}</code>을 설정하고 <code>ref.focus()</code>로 포커스합니다.</p>
+
+    <div class="codeblock"><div class="codeblock-head"><span>이벤트 상세 페이지</span><span>TypeScript</span></div>
+<pre>&lt;<span class="tag">ScreenReader</span>
+  <span class="attr">ref</span><span class="op">=</span>{guideRef}
+  <span class="attr">tabIndex</span><span class="op">=</span>{<span class="num">-1</span>}
+  <span class="attr">aria-label</span><span class="op">=</span>{guideLabel}
+/&gt;
+
+<span class="cm">// 읽기 모드 진입 시 프로그래밍적으로 포커스</span>
+<span class="fn">useEffect</span>(() <span class="kw">=&gt;</span> {
+  <span class="kw">if</span> (read) {
+    <span class="fn">setTimeout</span>(() <span class="kw">=&gt;</span> {
+      guideRef.current?.<span class="fn">focus</span>();
+    }, <span class="num">100</span>);
+  }
+}, [read]);</pre></div>
+  </section>
+
+  <!-- tabIndex 트러블슈팅 -->
+  <section id="tabindex-trouble">
+    <h3>tabIndex 트러블슈팅</h3>
+    <p>tabIndex 관련 문제 상황과 해결 방법입니다.</p>
+
+    <h4>문제 1: 포커스가 전혀 이동하지 않음</h4>
+    <div class="callout-error">
+      <strong>증상:</strong> 방향키를 눌러도 요소에 노란 아웃라인이 표시되지 않고, TTS도 동작하지 않음
+    </div>
+    <div class="compare-grid">
+      <div class="compare-box bad">
+        <span class="compare-label">잘못된 코드</span>
+        <code>&lt;div&gt;층별안내&lt;/div&gt;</code><br><br>
+        <code>tabIndex</code>도 없고 <code>Focusable</code>로 감싸지도 않음.<br>
+        브라우저가 이 요소를 포커스 대상으로 인식하지 못함.
+      </div>
+      <div class="compare-box good">
+        <span class="compare-label">올바른 코드</span>
+        <code>&lt;Focusable focusItem={...}&gt;</code><br>
+        <code>&nbsp;&nbsp;&lt;div&gt;층별안내&lt;/div&gt;</code><br>
+        <code>&lt;/Focusable&gt;</code><br><br>
+        Focusable이 <code>tabIndex={-1}</code>을 자동 주입.
+      </div>
+    </div>
+
+    <h4>문제 2: Tab 키로 의도하지 않은 이동 발생</h4>
+    <div class="callout-error">
+      <strong>증상:</strong> 사용자가 Tab을 누르면 방향키 네비게이션 순서를 건너뛰고 엉뚱한 요소로 이동
+    </div>
+    <div class="compare-grid">
+      <div class="compare-box bad">
+        <span class="compare-label">잘못된 코드</span>
+        <code>&lt;button tabIndex={0}&gt;층별안내&lt;/button&gt;</code><br><br>
+        <code>tabIndex={0}</code>은 Tab 순서에 포함됨.<br>
+        방향키 기반 네비게이션과 충돌.
+      </div>
+      <div class="compare-box good">
+        <span class="compare-label">올바른 코드</span>
+        <code>&lt;button tabIndex={-1}&gt;층별안내&lt;/button&gt;</code><br><br>
+        또는 <code>Focusable</code>로 감싸서 자동 처리.<br>
+        Tab 순서에서 제외되어 충돌 없음.
+      </div>
+    </div>
+
+    <h4>문제 3: ScreenReader 요소에 포커스가 안 됨</h4>
+    <div class="callout-error">
+      <strong>증상:</strong> <code>guideRef.current?.focus()</code>를 호출해도 포커스가 이동하지 않음
+    </div>
+    <div class="compare-grid">
+      <div class="compare-box bad">
+        <span class="compare-label">잘못된 코드</span>
+        <code>&lt;ScreenReader ref={guideRef}</code><br>
+        <code>&nbsp;&nbsp;aria-label={label} /&gt;</code><br><br>
+        <code>tabIndex</code> 속성이 없으면 <code>&lt;div&gt;</code>는 기본적으로 포커스를 받을 수 없음.
+      </div>
+      <div class="compare-box good">
+        <span class="compare-label">올바른 코드</span>
+        <code>&lt;ScreenReader ref={guideRef}</code><br>
+        <code>&nbsp;&nbsp;tabIndex={-1}</code><br>
+        <code>&nbsp;&nbsp;aria-label={label} /&gt;</code><br><br>
+        <code>tabIndex={-1}</code>이 있어야 <code>.focus()</code> 호출이 동작.
+      </div>
+    </div>
+
+  </section>
+
+  <hr class="divider">
+
+  <!-- aria-label의 역할 -->
+  <section id="arialabel-role">
+    <h3>aria-label의 역할</h3>
+    <p><code>aria-label</code>이 키오스크 TTS 시스템에서 수행하는 역할과 대안 속성과의 비교입니다.</p>
+
+    <h4>aria-label을 사용하는 이유</h4>
+    <div class="callout">
+      <strong>키오스크 요소의 시각적 텍스트와 음성 안내 텍스트는 다릅니다.</strong><br>
+      화면에는 "층별안내"로 표시되지만, 음성으로는 "층별안내: 확인 버튼을 누르시면 층별 안내 메뉴로 이동합니다."라고 안내해야 합니다. <code>aria-label</code>은 시각적 텍스트를 덮어쓰고 별도의 음성 텍스트를 제공합니다.
+    </div>
+
+    <h4>왜 textContent가 아닌 aria-label인가</h4>
+    <table>
+      <thead><tr><th>방식</th><th>장점</th><th>단점</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>textContent</code></td>
+          <td>추가 속성 불필요</td>
+          <td>화면 표시 텍스트와 음성 텍스트를 분리할 수 없음</td>
+        </tr>
+        <tr>
+          <td><code>aria-label</code></td>
+          <td>시각적 텍스트와 독립적인 음성 텍스트 정의 가능</td>
+          <td>속성을 명시적으로 작성해야 함</td>
+        </tr>
+        <tr>
+          <td><code>aria-describedby</code></td>
+          <td>다른 요소의 텍스트를 참조</td>
+          <td>별도 요소 필요, 동적 텍스트에 부적합</td>
+        </tr>
+        <tr>
+          <td><code>title</code></td>
+          <td>브라우저 기본 지원</td>
+          <td>TTS 엔진이 일관성 없이 처리, 호버 툴팁 표시</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h4>동적 상태 반영</h4>
+    <p><code>aria-label</code>은 JavaScript 표현식을 사용하여 현재 상태를 실시간으로 반영할 수 있습니다.</p>
+
+    <div class="codeblock"><div class="codeblock-head"><span>focusItems.ts - 동적 라벨 생성</span><span>TypeScript</span></div>
+<pre>FLOOR: (selected: <span class="type">boolean</span> = <span class="kw">false</span>) <span class="kw">=&gt;</span> ({
+  key: <span class="str">'menu-item-floor'</span>,
+  label: <span class="str">`층별안내</span>${selected ? <span class="str">', 선택됨'</span> : <span class="str">''</span>}<span class="str">: 확인 버튼을 누르시면 층별 안내 메뉴로 이동합니다.`</span>,
+})
+
+<span class="cm">// selected=true  → "층별안내, 선택됨: 확인 버튼을 누르시면 층별 안내 메뉴로 이동합니다."</span>
+<span class="cm">// selected=false → "층별안내: 확인 버튼을 누르시면 층별 안내 메뉴로 이동합니다."</span></pre></div>
+
+    <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">* 위 코드의 라벨 텍스트는 예시이며, 실제 프로젝트에서는 기관명 등 구체적인 내용이 포함됩니다.</p>
+
+    <h4>복잡한 설명을 위한 generateLabel 유틸리티</h4>
+    <p>단순 버튼이 아닌 상세 페이지에서는 <code>generateLabel</code> 유틸리티를 사용해 긴 설명 텍스트를 구조적으로 생성합니다.</p>
+
+    <div class="codeblock"><div class="codeblock-head"><span>generateLabel.ts - 이벤트 상세 예시</span><span>TypeScript</span></div>
+<pre><span class="kw">export const</span> <span class="fn">generateEventDesc</span> = (event: <span class="type">BarrierFree.IEvent</span>) <span class="kw">=&gt;</span> {
+  <span class="kw">const</span> parts = [
+    <span class="str">`</span>${event.ko}<span class="str"> 행사 안내입니다.`</span>,
+    <span class="str">`</span>${event.time}<span class="str">에 </span>${event.position}<span class="str">에서 진행됩니다.`</span>,
+    event.price &amp;&amp; <span class="str">`티켓은 </span>${event.price}<span class="str">이며`</span>,
+    event.age &amp;&amp; <span class="str">`</span>${event.age}<span class="str">입니다.`</span>,
+    event.needTime &amp;&amp; <span class="str">`총 공연시간은 </span>${event.needTime}<span class="str">입니다.`</span>,
+    event.host &amp;&amp; <span class="str">`이 공연은 </span>${event.host}<span class="str">에서 주최합니다.`</span>,
+    <span class="cm">// ... 문의처 안내 등</span>
+    <span class="str">'확인 또는 취소 버튼을 눌러 이전 메뉴로 가실 수 있습니다.'</span>,
+  ].<span class="fn">filter</span>(<span class="type">Boolean</span>);
+
+  <span class="kw">return</span> parts.<span class="fn">join</span>(<span class="str">' '</span>);
+};</pre></div>
+  </section>
+
+  <!-- aria-label 트러블슈팅 -->
+  <section id="arialabel-trouble">
+    <h3>aria-label 트러블슈팅</h3>
+    <p>aria-label 관련 문제 상황과 해결 방법입니다.</p>
+
+    <h4>문제 1: 포커스는 되지만 아무 소리도 안 남</h4>
+    <div class="callout-error">
+      <strong>증상:</strong> 노란색 아웃라인은 표시되지만 TTS 음성이 재생되지 않음
+    </div>
+    <div class="compare-grid">
+      <div class="compare-box bad">
+        <span class="compare-label">잘못된 코드</span>
+        <code>&lt;Focusable focusItem={{</code><br>
+        <code>&nbsp;&nbsp;key: 'menu-floor'</code><br>
+        <code>}}&gt;</code><br><br>
+        <code>focusItem</code>에 <code>label</code> 속성이 없음.<br>
+        <code>aria-label</code>이 <code>undefined</code>로 설정됨.
+      </div>
+      <div class="compare-box good">
+        <span class="compare-label">올바른 코드</span>
+        <code>&lt;Focusable focusItem={{</code><br>
+        <code>&nbsp;&nbsp;key: 'menu-floor',</code><br>
+        <code>&nbsp;&nbsp;label: '층별안내: ...'</code><br>
+        <code>}}&gt;</code><br><br>
+        <code>label</code> 속성이 있어 <code>aria-label</code>에 텍스트 주입됨.
+      </div>
+    </div>
+
+    <h4>문제 2: 같은 텍스트를 연속으로 읽어주지 않음</h4>
+    <div class="callout-error">
+      <strong>증상:</strong> H 키를 눌러 다시 읽기를 해도 같은 내용이면 TTS가 반응하지 않음
+    </div>
+    <p><code>aria-live</code> 영역은 텍스트가 <strong>변경</strong>될 때만 읽어줍니다. 동일한 텍스트를 다시 설정하면 변경으로 감지되지 않습니다.</p>
+
+    <div class="compare-grid">
+      <div class="compare-box bad">
+        <span class="compare-label">잘못된 방식</span>
+        <code>guideRef.current.textContent = text;</code><br><br>
+        이전과 같은 텍스트이면 <code>aria-live</code>가 변경을 감지하지 못해 음성이 재생되지 않음.
+      </div>
+      <div class="compare-box good">
+        <span class="compare-label">올바른 방식 (프로젝트 구현)</span>
+        <code>guideRef.current.textContent = '';</code><br>
+        <code>requestAnimationFrame(() => {</code><br>
+        <code>&nbsp;&nbsp;guideRef.current.textContent = text;</code><br>
+        <code>});</code><br><br>
+        빈 문자열로 초기화 후 다음 프레임에서 재설정하여 변경 감지.
+      </div>
+    </div>
+
+    <h4>문제 3: 복잡한 라벨에서 일부 정보가 누락됨</h4>
+    <div class="callout-error">
+      <strong>증상:</strong> <code>generateLabel</code>에서 조건부 필드가 <code>undefined</code>로 포함되어 "undefined"가 읽힘
+    </div>
+    <div class="compare-grid">
+      <div class="compare-box bad">
+        <span class="compare-label">잘못된 코드</span>
+        <code>const parts = [</code><br>
+        <code>&nbsp;&nbsp;`${event.ko} 행사`,</code><br>
+        <code>&nbsp;&nbsp;`티켓: ${event.price}`,</code><br>
+        <code>];</code><br><br>
+        <code>event.price</code>가 없으면 "티켓: undefined"가 됨.
+      </div>
+      <div class="compare-box good">
+        <span class="compare-label">올바른 코드</span>
+        <code>const parts = [</code><br>
+        <code>&nbsp;&nbsp;`${event.ko} 행사`,</code><br>
+        <code>&nbsp;&nbsp;event.price && `티켓: ${event.price}`,</code><br>
+        <code>].filter(Boolean);</code><br><br>
+        조건부 포함 + <code>filter(Boolean)</code>으로 falsy 값 제거.
+      </div>
+    </div>
+
+    <h4>문제 4: 상태 변경 후 라벨이 업데이트되지 않음</h4>
+    <div class="callout-error">
+      <strong>증상:</strong> 메뉴를 선택해도 "선택됨"이 aria-label에 반영되지 않음
+    </div>
+    <div class="compare-grid">
+      <div class="compare-box bad">
+        <span class="compare-label">잘못된 코드</span>
+        <code>&lt;Focusable focusItem={FOCUS_ITEMS.MENU.FLOOR(false)}&gt;</code><br><br>
+        <code>selected</code> 상태를 항상 <code>false</code>로 고정. 선택 상태가 반영되지 않음.
+      </div>
+      <div class="compare-box good">
+        <span class="compare-label">올바른 코드</span>
+        <code>&lt;Focusable focusItem={</code><br>
+        <code>&nbsp;&nbsp;FOCUS_ITEMS.MENU.FLOOR(currentMenu === 'floor')</code><br>
+        <code>}&gt;</code><br><br>
+        실제 상태값을 전달하여 라벨이 동적으로 변경됨.
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- 접근 방식 비교 -->
+  <section id="compare-approaches">
+    <h3>접근 방식 비교</h3>
+    <p>TTS 구현 시 고려할 수 있는 여러 접근 방식과 현재 프로젝트에서 <code>tabIndex</code> + <code>aria-label</code>을 선택한 이유입니다.</p>
+
+    <h4>접근 방식 A: textContent 직접 읽기</h4>
+    <div class="codeblock"><div class="codeblock-head"><span>textContent 방식</span><span>TypeScript</span></div>
+<pre><span class="cm">// 포커스된 요소의 텍스트를 그대로 TTS에 전달</span>
+<span class="kw">const</span> text = focusedElement.<span class="attr">textContent</span>;
+<span class="fn">speak</span>(text);</pre></div>
+
+    <div class="callout-error">
+      <strong>문제:</strong>
+      <ul>
+        <li>화면에 "층별안내"만 표시되므로 TTS도 "층별안내"만 읽음</li>
+        <li>어디로 이동하는지, 어떤 동작을 하는지 추가 안내 불가</li>
+        <li>아이콘만 있는 버튼(<code>&lt;CloseIcon /&gt;</code>)은 읽을 텍스트 자체가 없음</li>
+        <li>자식 요소가 많으면 불필요한 텍스트까지 모두 합쳐서 읽힘</li>
+      </ul>
+    </div>
+
+    <h4>접근 방식 B: data-* 커스텀 속성</h4>
+    <div class="codeblock"><div class="codeblock-head"><span>data 속성 방식</span><span>TypeScript</span></div>
+<pre>&lt;<span class="tag">button</span> <span class="attr">data-tts</span><span class="op">=</span><span class="str">"층별안내: 확인 시 이동합니다."</span>&gt;
+  층별안내
+&lt;/<span class="tag">button</span>&gt;</pre></div>
+
+    <div class="callout-warn">
+      <strong>문제:</strong>
+      <ul>
+        <li>TTS 엔진을 자체 구현하면 <code>data-*</code> 속성을 읽는 것은 가능하지만, Windows 내레이터는 자체 스크린 리더를 활용하여 포커스된 요소의 <code>aria-label</code>을 읽기 때문에 <code>data-*</code> 속성을 인식하지 못함</li>
+        <li>웹 접근성 표준(WCAG)에 부합하지 않음</li>
+      </ul>
+    </div>
+
+    <h4>접근 방식 C: aria-label (현재 채택)</h4>
+    <div class="codeblock"><div class="codeblock-head"><span>aria-label 방식</span><span>TypeScript</span></div>
+<pre>&lt;<span class="tag">button</span>
+  <span class="attr">tabIndex</span><span class="op">=</span>{<span class="num">-1</span>}
+  <span class="attr">aria-label</span><span class="op">=</span><span class="str">"층별안내: 확인 버튼을 누르시면 층별 안내 메뉴로 이동합니다."</span>
+&gt;
+  층별안내
+&lt;/<span class="tag">button</span>&gt;</pre></div>
+
+    <div class="callout-success">
+      <strong>장점:</strong>
+      <ul>
+        <li>W3C WAI-ARIA 표준 속성으로 스크린 리더 호환성 보장</li>
+        <li>Windows 내레이터가 자동으로 인식하여 읽어줌</li>
+        <li>시각적 텍스트와 독립적으로 음성 텍스트를 정의 가능</li>
+        <li>로컬 TTS 엔진에서도 <code>getAttribute('aria-label')</code>로 일관되게 추출</li>
+        <li>동적 상태를 JavaScript 표현식으로 즉시 반영 가능</li>
+      </ul>
+    </div>
+
+    <h4>종합 비교 표</h4>
+    <table>
+      <thead><tr><th>기준</th><th>textContent</th><th>data-*</th><th>aria-label</th></tr></thead>
+      <tbody>
+        <tr><td>스크린 리더 호환</td><td>부분적</td><td>불가</td><td><strong>완전 지원</strong></td></tr>
+        <tr><td>음성/시각 텍스트 분리</td><td>불가</td><td>가능</td><td><strong>가능</strong></td></tr>
+        <tr><td>WCAG 준수</td><td>부분적</td><td>미준수</td><td><strong>준수</strong></td></tr>
+        <tr><td>동적 상태 반영</td><td>가능</td><td>가능</td><td><strong>가능</strong></td></tr>
+        <tr><td>아이콘 전용 버튼</td><td>불가</td><td>가능</td><td><strong>가능</strong></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+
+
+  <div class="footer">
+    tabIndex &amp; aria-label 심층 가이드
+  </div>
+
+</main>
+
+<script>
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('#sidebar-nav a');
+
+const activate = (id) => {
+  navLinks.forEach(a => {
+    a.classList.toggle('active', a.getAttribute('href') === '#' + id);
+  });
+};
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) activate(entry.target.id);
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+
+sections.forEach(s => observer.observe(s));
+
+navLinks.forEach(a => {
+  a.addEventListener('click', () => activate(a.getAttribute('href').slice(1)));
+});
+</script>
+</body>
+</html>
