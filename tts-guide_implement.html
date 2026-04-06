@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>tabIndex &amp; aria-label 심층 가이드</title>
+<title>TTS 가이드</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
@@ -144,15 +144,15 @@ td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
 ol, ul { margin: 8px 0 16px; padding-left: 20px; }
 li { margin-bottom: 4px; }
 
-@media print { .sidebar { display: none; } .main { margin-left: 0; } }
+@media print { .sidebar { display: none; } .main { margin-left: 0; } .footer { display: none; } }
 </style>
 </head>
 <body>
 
 <aside class="sidebar">
   <div class="sidebar-head">
-    <h1>tabIndex &amp; aria-label</h1>
-    <p>심층 가이드 &amp; 트러블슈팅</p>
+    <h1>TTS 가이드</h1>
+    <p>가이드 &amp; 트러블슈팅</p>
   </div>
   <nav class="sidebar-nav" id="sidebar-nav">
     <span class="sidebar-label">개요</span>
@@ -166,12 +166,14 @@ li { margin-bottom: 4px; }
     <a href="#arialabel-trouble">aria-label 트러블슈팅</a>
     <span class="sidebar-label">비교</span>
     <a href="#compare-approaches">접근 방식 비교</a>
+    <span class="sidebar-label">부록</span>
+    <a href="#glossary">용어 정의</a>
   </nav>
 </aside>
 
 <main class="main">
 
-  <h2>tabIndex &amp; aria-label 심층 가이드</h2>
+  <h2>TTS 가이드</h2>
   <p>베리어프리 키오스크에서 <code>tabIndex</code>와 <code>aria-label</code>을 사용하는 이유와 트러블슈팅 사례를 정리한 문서입니다.</p>
 
   <div class="callout">
@@ -677,10 +679,33 @@ li { margin-bottom: 4px; }
     </table>
   </section>
 
+  <hr class="divider">
 
+  <!-- 용어 정의 -->
+  <section id="glossary">
+    <h3>용어 정의</h3>
+    <p>이 문서에서 사용하는 주요 용어의 정의입니다.</p>
+
+    <table>
+      <thead><tr><th>용어</th><th>정의</th></tr></thead>
+      <tbody>
+        <tr><td><code>aria-label</code></td><td>WAI-ARIA 속성. 요소의 접근 가능한 이름(Accessible Name)을 정의하며, 시각적 텍스트와 독립적인 라벨을 제공한다.</td></tr>
+        <tr><td><code>aria-live</code></td><td>WAI-ARIA 속성. 동적으로 변경되는 콘텐츠 영역을 스크린 리더에 알려, 변경 시 자동으로 읽어준다. <code>polite</code>(현재 읽기 후)와 <code>assertive</code>(즉시) 값이 있다.</td></tr>
+        <tr><td><code>aria-hidden</code></td><td>WAI-ARIA 속성. <code>"true"</code>로 설정하면 스크린 리더가 해당 요소를 무시한다. 장식 요소에 사용한다.</td></tr>
+        <tr><td><code>tabIndex</code></td><td>HTML 속성. 요소의 포커스 가능 여부와 Tab 순서를 결정한다. <code>-1</code>은 JavaScript로만 포커스 가능, <code>0</code>은 Tab 순서에 포함.</td></tr>
+        <tr><td><code>role</code></td><td>WAI-ARIA 속성. 요소의 역할을 명시한다. 예: <code>dialog</code>, <code>alert</code>, <code>status</code>, <code>tab</code>, <code>img</code>.</td></tr>
+        <tr><td>TTS (Text-to-Speech)</td><td>텍스트를 음성으로 변환하는 기술. Windows 내레이터, ONNX 기반 로컬 엔진 등이 있다.</td></tr>
+        <tr><td>스크린 리더</td><td>화면의 텍스트와 UI 정보를 음성으로 읽어주는 소프트웨어. Windows 내레이터, NVDA, JAWS, VoiceOver 등이 있다.</td></tr>
+        <tr><td>공간 네비게이션</td><td>방향키(상하좌우)를 사용하여 화면의 요소 간 포커스를 이동하는 방식. 키오스크 환경에서 Tab 네비게이션 대신 사용한다.</td></tr>
+        <tr><td>접근 가능한 이름 (Accessible Name)</td><td>스크린 리더가 요소를 식별할 때 사용하는 텍스트. <code>aria-label</code>, <code>aria-labelledby</code>, 또는 요소의 텍스트 콘텐츠에서 결정된다.</td></tr>
+        <tr><td>WCAG</td><td>Web Content Accessibility Guidelines. W3C에서 발행한 웹 접근성 국제 표준 지침이다.</td></tr>
+        <tr><td>WAI-ARIA</td><td>Web Accessibility Initiative - Accessible Rich Internet Applications. W3C에서 정의한 접근성 강화 명세이다.</td></tr>
+      </tbody>
+    </table>
+  </section>
 
   <div class="footer">
-    tabIndex &amp; aria-label 심층 가이드
+    TTS 가이드
   </div>
 
 </main>
