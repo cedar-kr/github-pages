@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TTS Narrator API Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sidebar-w: 220px;
+  --bg: #fff;
+  --bg-aside: #f9fafb;
+  --bg-code: #f8f8f8;
+  --border: #e5e7eb;
+  --text: #1f2937;
+  --text-sub: #6b7280;
+  --text-muted: #9ca3af;
+  --blue: #2563eb;
+  --font-sans: 'Noto Sans KR', -apple-system, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+body { font-family: var(--font-sans); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.8; }
+
+.sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0;
+  width: var(--sidebar-w); background: var(--bg-aside);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  overflow-y: auto; z-index: 10;
+}
+.sidebar-head { padding: 20px 16px 16px; border-bottom: 1px solid var(--border); }
+.sidebar-head h1 { font-size: 13px; font-weight: 700; }
+.sidebar-head p { font-size: 11px; color: var(--text-muted); margin-top: 2px; font-family: var(--font-mono); }
+.sidebar-nav { padding: 12px 0; flex: 1; }
+.sidebar-label {
+  display: block; padding: 12px 16px 4px; font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);
+}
+.sidebar-nav a {
+  display: block; padding: 5px 16px; color: var(--text-sub);
+  text-decoration: none; font-size: 13px;
+  border-left: 2px solid transparent;
+  transition: all 0.15s;
+}
+.sidebar-nav a:hover { color: var(--text); background: #f0f1f3; }
+.sidebar-nav a.active { color: var(--blue); border-left-color: var(--blue); font-weight: 500; }
+
+.main { margin-left: var(--sidebar-w); max-width: 740px; margin-right: auto; padding: 40px 36px 80px; margin-left: calc(var(--sidebar-w) + max(0px, (100vw - var(--sidebar-w) - 740px) / 2)); }
+
+h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+h2 + p { color: var(--text-sub); margin-bottom: 32px; }
+
+section { margin-bottom: 48px; }
+h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+h3 + p { color: var(--text-sub); margin-bottom: 16px; font-size: 13px; }
+h4 { font-size: 14px; font-weight: 600; margin: 20px 0 8px; }
+p { margin-bottom: 8px; }
+
+.codeblock { margin: 8px 0 16px; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.codeblock-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 14px; background: #f1f3f5; border-bottom: 1px solid var(--border);
+  font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);
+}
+.codeblock pre {
+  background: var(--bg-code); margin: 0; padding: 14px 16px; overflow-x: auto;
+  font-family: var(--font-mono); font-size: 12.5px; line-height: 1.65; color: var(--text);
+}
+code { font-family: var(--font-mono); }
+p code, li code, td code {
+  font-size: 12px; background: #f1f3f5; padding: 2px 6px;
+  border-radius: 3px; color: #7c3aed;
+}
+
+.kw { color: #d73a49; }
+.fn { color: #6f42c1; }
+.str { color: #032f62; }
+.type { color: #005cc5; }
+.cm { color: #6a737d; font-style: italic; }
+.num { color: #005cc5; }
+.tag { color: #22863a; }
+.attr { color: #e36209; }
+.op { color: #d73a49; }
+
+table { width: 100%; border-collapse: collapse; margin: 8px 0 16px; font-size: 13px; }
+th { background: var(--bg-aside); font-weight: 600; padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+
+.flow-summary {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  padding: 14px 16px; background: var(--bg-aside); border: 1px solid var(--border);
+  border-radius: 6px; margin: 12px 0 20px; font-size: 13px; font-family: var(--font-mono);
+}
+.flow-summary span { color: var(--text-muted); }
+
+.callout {
+  padding: 16px 20px; border-radius: 6px; margin: 16px 0;
+  background: #eff6ff; border: 1px solid #bfdbfe;
+}
+.callout strong { color: var(--blue); }
+
+.divider { border: none; border-top: 2px solid var(--border); margin: 56px 0 48px; }
+
+.footer { padding: 20px 0; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-muted); }
+
+@media print { .sidebar { display: none; } .main { margin-left: 0; } }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-head">
+    <h1>TTS Narrator Guide</h1>
+    <p>aria-label &rarr; TTS</p>
+  </div>
+  <nav class="sidebar-nav" id="sidebar-nav">
+    <span class="sidebar-label">개발자가 할 일</span>
+    <a href="#quick-start">Quick Start</a>
+    <a href="#examples">동작별 예시</a>
+  </nav>
+</aside>
+
+<main class="main">
+
+  <h2>TTS Narrator API Guide</h2>
+  <p>베리어프리 키오스크의 내레이터 음성 안내 구현 가이드입니다.</p>
+
+  <!-- Quick Start -->
+  <section id="quick-start">
+    <h3>Quick Start</h3>
+
+    <div class="callout">
+      <strong>aria-label 속성에 발화를 원하는 텍스트를 넣으면 됩니다.</strong><br>
+      <code>tabIndex</code>로 포커스 가능한 요소에 <code>aria-label</code>을 작성하면, 해당 요소가 포커스될 때 텍스트가 자동으로 음성 변환됩니다.
+    </div>
+
+    <div class="codeblock"><div class="codeblock-head"><span>가장 기본적인 사용법</span><span>TypeScript</span></div>
+<pre><span class="cm">// tabIndex로 포커스 가능하게 만들고, aria-label에 읽어줄 텍스트를 넣습니다.</span>
+&lt;<span class="tag">button</span>
+  <span class="attr">tabIndex</span><span class="op">=</span>{<span class="num">0</span>}
+  <span class="attr">aria-label</span><span class="op">=</span><span class="str">"층별안내: 확인 버튼을 누르시면 층별 안내로 이동합니다."</span>
+&gt;
+  층별안내
+&lt;/<span class="tag">button</span>&gt;</pre></div>
+
+    <p>이것이 전부입니다. <code>tabIndex</code>로 포커스 가능한 요소에 포커스가 들어오면, <code>aria-label</code>에 작성된 텍스트가 음성으로 재생됩니다.</p>
+
+    <div class="flow-summary">
+      <code>tabIndex</code>로 포커스 가능 <span>&rarr;</span>
+      요소에 포커스 진입 <span>&rarr;</span>
+      <code>aria-label</code> 텍스트 추출 <span>&rarr;</span>
+      TTS 음성 재생
+    </div>
+
+    <table>
+      <thead><tr><th>TTS 엔진</th><th>포커스된 요소의 aria-label 처리 방식</th></tr></thead>
+      <tbody>
+        <tr><td>Windows 내레이터</td><td><code>tabIndex</code>로 포커스된 요소의 <code>aria-label</code>을 Windows 스크린 리더가 자동으로 읽음</td></tr>
+        <tr><td>로컬 TTS (ONNX)</td><td><code>tabIndex</code>로 포커스된 요소의 <code>aria-label</code> 텍스트를 추출하여 로컬 TTS 엔진에 전달 후 음성 생성</td></tr>
+      </tbody>
+    </table>
+
+    <p>개발자가 하는 일은 <code>tabIndex</code>와 <code>aria-label</code>을 작성하는 것뿐이고, 나머지는 TTS 엔진이 자동으로 처리합니다.</p>
+  </section>
+
+  <!-- 동작별 예시 -->
+  <section id="examples">
+    <h3>동작별 예시</h3>
+    <p>키오스크 화면의 각 동작에 맞는 <code>aria-label</code> 작성 예시입니다. 그대로 복사하여 사용할 수 있습니다.</p>
+
+    <h4>메뉴 버튼</h4>
+    <div class="codeblock"><div class="codeblock-head"><span>메뉴 버튼</span><span>TypeScript</span></div>
+<pre>&lt;<span class="tag">button</span> <span class="attr">aria-label</span><span class="op">=</span><span class="str">"층별안내: 확인 버튼을 누르시면 층별 안내로 이동합니다."</span>&gt;
+  층별안내
+&lt;/<span class="tag">button</span>&gt;
+
+&lt;<span class="tag">button</span> <span class="attr">aria-label</span><span class="op">=</span><span class="str">"행사안내: 확인 버튼을 누르시면 행사 안내로 이동합니다."</span>&gt;
+  행사안내
+&lt;/<span class="tag">button</span>&gt;</pre></div>
+
+    <h4>선택 상태가 있는 버튼</h4>
+    <div class="codeblock"><div class="codeblock-head"><span>동적 상태 반영</span><span>TypeScript</span></div>
+<pre><span class="kw">const</span> <span class="fn">MenuButton</span> <span class="op">=</span> ({ name, selected }: { name: <span class="type">string</span>; selected: <span class="type">boolean</span> }) <span class="kw">=&gt;</span> (
+  &lt;<span class="tag">button</span>
+    <span class="attr">aria-label</span><span class="op">=</span>{<span class="str">`</span>${name}${selected ? <span class="str">', 선택됨'</span> : <span class="str">''</span>}<span class="str">: 확인 시 이동합니다.`</span>}
+  &gt;
+    {name}
+  &lt;/<span class="tag">button</span>&gt;
+);
+
+<span class="cm">// selected=true  → "층별안내, 선택됨: 확인 시 이동합니다."</span>
+<span class="cm">// selected=false → "층별안내: 확인 시 이동합니다."</span></pre></div>
+
+    <h4>시설 목록</h4>
+    <div class="codeblock"><div class="codeblock-head"><span>리스트 렌더링</span><span>TypeScript</span></div>
+<pre><span class="kw">interface</span> <span class="type">Facility</span> {
+  id: <span class="type">string</span>;
+  floor: <span class="type">number</span>;
+  name: <span class="type">string</span>;
+}
+
+<span class="kw">const</span> <span class="fn">FacilityList</span> <span class="op">=</span> ({ items }: { items: <span class="type">Facility</span>[] }) <span class="kw">=&gt;</span> (
+  &lt;&gt;
+    {items.<span class="fn">map</span>((item) <span class="kw">=&gt;</span> (
+      &lt;<span class="tag">div</span>
+        <span class="attr">key</span><span class="op">=</span>{item.id}
+        <span class="attr">aria-label</span><span class="op">=</span>{<span class="str">`</span>${item.floor}<span class="str">층 </span>${item.name}<span class="str">, 확인 시 길 안내를 시작합니다.`</span>}
+        <span class="attr">tabIndex</span><span class="op">=</span>{<span class="num">0</span>}
+      &gt;
+        {item.name}
+      &lt;/<span class="tag">div</span>&gt;
+    ))}
+  &lt;/&gt;
+);
+
+<span class="cm">// → "3층 대회의실, 확인 시 길 안내를 시작합니다."</span></pre></div>
+
+    <h4>닫기 / 네비게이션</h4>
+    <div class="codeblock"><div class="codeblock-head"><span>네비게이션 버튼</span><span>TypeScript</span></div>
+<pre>&lt;<span class="tag">button</span> <span class="attr">aria-label</span><span class="op">=</span><span class="str">"닫기 버튼. 확인 시 이전 단계로 돌아갑니다."</span>&gt;
+  &lt;<span class="tag">CloseIcon</span> /&gt;
+&lt;/<span class="tag">button</span>&gt;
+
+&lt;<span class="tag">button</span> <span class="attr">aria-label</span><span class="op">=</span><span class="str">"다시보기, 확인 시 안내를 다시 시작합니다."</span>&gt;
+  다시보기
+&lt;/<span class="tag">button</span>&gt;
+
+&lt;<span class="tag">button</span> <span class="attr">aria-label</span><span class="op">=</span><span class="str">"처음으로, 확인 시 메인 화면으로 돌아갑니다."</span>&gt;
+  처음으로
+&lt;/<span class="tag">button</span>&gt;</pre></div>
+
+    <h4>초기 안내 가이드</h4>
+    <div class="codeblock"><div class="codeblock-head"><span>가이드 메시지</span><span>TypeScript</span></div>
+<pre><span class="kw">const</span> guideLabel <span class="op">=</span> [
+  <span class="str">'안녕하세요. 키오스크 사용을 도와드리겠습니다.'</span>,
+  <span class="str">'상하좌우 방향키로 항목을 이동할 수 있습니다.'</span>,
+  <span class="str">'확인 버튼을 누르면 선택됩니다.'</span>,
+].<span class="fn">join</span>(<span class="str">' '</span>);
+
+&lt;<span class="tag">div</span> <span class="attr">aria-label</span><span class="op">=</span>{guideLabel} <span class="attr">tabIndex</span><span class="op">=</span>{<span class="num">0</span>}&gt;
+  키오스크 안내
+&lt;/<span class="tag">div</span>&gt;
+
+<span class="cm">// → "안녕하세요. 키오스크 사용을 도와드리겠습니다. 상하좌우 방향키로 항목을 이동할 수 있습니다. 확인 버튼을 누르면 선택됩니다."</span></pre></div>
+
+    <h4>label 생성 함수 분리</h4>
+    <p>label 텍스트가 복잡하거나 여러 곳에서 재사용된다면 함수로 분리할 수 있습니다.</p>
+    <div class="codeblock"><div class="codeblock-head"><span>utils/labels.ts</span><span>TypeScript</span></div>
+<pre><span class="kw">export const</span> <span class="fn">floorLabel</span> <span class="op">=</span> (floor: { name: <span class="type">string</span>; facilities: <span class="type">string</span> }): <span class="type">string</span> <span class="kw">=&gt;</span>
+  <span class="str">`</span>${floor.name}<span class="str"> 안내입니다. 이 층에는 </span>${floor.facilities}<span class="str">이 있습니다.`</span>;
+
+<span class="kw">export const</span> <span class="fn">menuLabel</span> <span class="op">=</span> (name: <span class="type">string</span>, selected: <span class="type">boolean</span>): <span class="type">string</span> <span class="kw">=&gt;</span>
+  <span class="str">`</span>${name}${selected ? <span class="str">', 선택됨'</span> : <span class="str">''</span>}<span class="str">: 확인 시 이동합니다.`</span>;</pre></div>
+
+    <div class="codeblock"><div class="codeblock-head"><span>사용</span><span>TypeScript</span></div>
+<pre><span class="kw">import</span> { <span class="fn">floorLabel</span>, <span class="fn">menuLabel</span> } <span class="kw">from</span> <span class="str">'../utils/labels'</span>;
+
+&lt;<span class="tag">div</span> <span class="attr">aria-label</span><span class="op">=</span>{<span class="fn">floorLabel</span>(currentFloor)}&gt;...&lt;/<span class="tag">div</span>&gt;
+&lt;<span class="tag">button</span> <span class="attr">aria-label</span><span class="op">=</span>{<span class="fn">menuLabel</span>(<span class="str">'층별안내'</span>, <span class="kw">true</span>)}&gt;층별안내&lt;/<span class="tag">button</span>&gt;</pre></div>
+  </section>
+
+
+  <div class="footer">
+    TTS Narrator API Guide &middot; 2026-04-03
+  </div>
+
+</main>
+
+<script>
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('#sidebar-nav a');
+
+const activate = (id) => {
+  navLinks.forEach(a => {
+    a.classList.toggle('active', a.getAttribute('href') === '#' + id);
+  });
+};
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) activate(entry.target.id);
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+
+sections.forEach(s => observer.observe(s));
+
+navLinks.forEach(a => {
+  a.addEventListener('click', () => activate(a.getAttribute('href').slice(1)));
+});
+</script>
+</body>
+</html>
